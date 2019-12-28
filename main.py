@@ -31,12 +31,17 @@ for i in range(K):
 # 存放每次划分的结果
 result = []
 for i in range(1, K-1):
+    OverCloudlet = []
+    UnderCloudlet = []
     # 将微云划分成两个集合
-    # .......
+    # ......
     pass
     '''Step4：初始化粒子的解（也即任务流g）,计算适应值，并进行迭代'''
     I = Individual()
     P = Population(I, Pnum, w, c1, c2)
     M = Mutation(Rmut)
     psoga = Psoga(P, M)
-    result.append(psoga.run(N))
+    result.append(psoga.run(OverCloudlet, UnderCloudlet, N))
+
+'''Step5：从result中计算最优解'''
+pass
