@@ -6,7 +6,13 @@ import math
 
 # Erlang C 公式
 def ErlangC(n, p):
-    pass
+    L = (n*p)**n/math.factorial(n)
+    R = 1/(1-p)
+    M = L*R
+    sum_ = 0
+    for k in range(n):
+        sum_ += (n*p)**k/math.factorial(k)
+    return M/(sum_+M)
 
 
 # # 计算适应度
@@ -17,3 +23,6 @@ def ErlangC(n, p):
 #     :return: 种群的适应度值
 #     """
 #     pass
+
+if __name__ == '__main__':
+   pass

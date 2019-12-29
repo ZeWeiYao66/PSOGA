@@ -19,10 +19,7 @@ c2 = 2
 cloudlet = Cloudlet()
 cloudlets = Cloudlets(cloudlet, K)
 cloudlets.initialize()
-cloudlets.initServerNum()
-cloudlets.initServerRate()
-cloudlets.initArrivalRate()
-cloudlets.initC()
+waitTimes = cloudlets.CalWaitTimes()
 '''Step2：计算每个微云的本地任务响应时间'''
 for i in range(K):
     cloudlets.cloudlets[i].CalWaitTime()
