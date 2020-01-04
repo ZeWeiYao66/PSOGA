@@ -33,9 +33,6 @@ class Cloudlet:
     def CalNetDelay(self):
         pass
 
-    # 计算任务响应时间
-    def CalResponseTime(self):
-        pass
 
 
 '''
@@ -48,17 +45,18 @@ class Cloudlets:
     def __init__(self, cloudlet, K=40):
         self.K = K  # 微云数目
         self.cloudlet = cloudlet  # 微云模板
-        self.cloudlets = None  # 微云集合
+        self.cloudlets = None  # 微云集合(不要对其位置进行交换)
         self.C = None  # 接入点之间的网络延时C(i,j)
 
     # 初始化微云集合，微云服务器数量，服务率，任务到达率以及网络延时
     def initialize(self):
         CldClass = self.cloudlet.__class__
         self.cloudlets = np.array([CldClass() for i in range(self.K)], dtype=CldClass)
-        self.initServerNum()
-        self.initServerRate()
-        self.initArrivalRate()
-        self.initC()
+        ser_num = self.initServerNum()
+        ser_rate = self.initServerRate()
+        arr_rate = self.initArrivalRate()
+        delay_matrix = self.initC()
+        return ser_num, ser_rate, arr_rate, delay_matrix
 
     # 初始化微云的服务器数量，服从泊松分布（均值为3）
     def initServerNum(self):
@@ -106,14 +104,23 @@ class Cloudlets:
             self.cloudlets[i].arrivalRate = np.around(arriveRate[i], decimals=5)
         return np.around(arriveRate, decimals=5)
 
-    # 初始化微云的网络延时C，0.1<=N(0.15,0.05)<=0.2
+    # 初始化微云的网络延时C，0.1<=N(0.15,0.05)<=0.2(这里的延时矩阵C为对角线元素全为0的对称矩阵)
     def initC(self):
         lower = 0.1
         upper = 0.2
         mu = 0.15
         sigma = 0.05
-        self.C = np.around(stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma
+        matrix = np.around(stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma
                                                , size=(self.K, self.K)), decimals=5)
+        # 保留矩阵上三角部分
+        matrix = np.triu(matrix)
+        # 将上三角拷贝到下三角部分
+        matrix += matrix.T
+        # 将对角线元素置为0
+        for i in range(self.K):
+            matrix[i][i] = 0
+        self.C = matrix
+        return self.C
 
     # 计算所有微云的任务等待时间
     def CalWaitTimes(self):
