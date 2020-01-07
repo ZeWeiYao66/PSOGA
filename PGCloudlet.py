@@ -1,16 +1,14 @@
 # ------------------------------
-# PGCloudlet.py: Cloudlet类、Cloudlets类，主要是与微云有关的
+# PGCloudlet.py: Cloudlet类、Cloudlets类.主要是与微云有关的
 # ------------------------------
-# np.around(a,decimals=)可以指定小数点后保留几位
 import numpy as np
 import scipy.stats as stats
+import copy
 import Utils
 
 '''
 单个微云
 '''
-
-
 class Cloudlet:
     # 设定微云的参数
     def __init__(self):
@@ -18,8 +16,6 @@ class Cloudlet:
         self.serverRate = None  # 服务率u
         self.arrivalRate = None  # 任务到达率
         self.waitTime = None  # 任务等待时间T
-        self.netDelay = None  # 传入任务的总网络延时Tnet
-        self.responseTime = None  # 任务响应时间D（D=T+Tnet）
 
     # 计算微云的任务等待时间
     def CalWaitTime(self):
@@ -29,17 +25,10 @@ class Cloudlet:
         self.waitTime = np.around(T, decimals=5)
         return self.waitTime
 
-    # 计算对应微云的总网络延时
-    def CalNetDelay(self):
-        pass
-
-
 
 '''
 微云集合
 '''
-
-
 class Cloudlets:
     # 设定微云集合
     def __init__(self, cloudlet, K=40):
@@ -51,6 +40,7 @@ class Cloudlets:
     # 初始化微云集合，微云服务器数量，服务率，任务到达率以及网络延时
     def initialize(self):
         CldClass = self.cloudlet.__class__
+        # 声明cloudlet对象
         self.cloudlets = np.array([CldClass() for i in range(self.K)], dtype=CldClass)
         ser_num = self.initServerNum()
         ser_rate = self.initServerRate()
@@ -60,11 +50,12 @@ class Cloudlets:
 
     # 初始化微云的服务器数量，服从泊松分布（均值为3）
     def initServerNum(self):
-        # 使用numpy的poisson实现泊松分布，返回K个微云的服务器数
+        # 使用numpy的poisson函数模拟泊松分布，返回K个微云的服务器数
         """Problem1: 该项可能会产生0，会使得初始化任务到达率出错。
                      如果出现0或者均值不为3，我们就重新生成"""
         while True:
             serNum = np.random.poisson(3, self.K)
+            # 如果结果集内存在0或者均值不为3，则重新生成
             if (0 in serNum) or (np.sum(serNum) != 3 * self.K):
                 continue
             else:
@@ -78,11 +69,12 @@ class Cloudlets:
     def initServerRate(self):
         # 指定上下限，均值和方差
         """这里把下限设置为0.25，是为了避免下面计算任务到达率的upper出现负值"""
+        # 这里的分布区间相当于(0,+∞)
         lower = 0.25
         upper = np.inf
         mu = 5
         sigma = 2
-        # 对正态分布指定区间上下限，并对样本进行截取，并对提取出的样本进行精度设置
+        # 使用截断正态函数对正态分布指定区间上下限（相当于对样本进行截取），并对提取出的样本进行精度设置（设置为小数点后面5位）
         serRate = np.around(stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma
                                                 , loc=mu, scale=sigma, size=self.K), decimals=5)
         # 对微云集合进行赋值
@@ -97,7 +89,7 @@ class Cloudlets:
         mu = 15
         sigma = 6
         for i in range(self.K):
-            # 计算upper
+            # 计算upper(每个微云对应的upper不一样)
             upper = self.cloudlets[i].serverNum * self.cloudlets[i].serverRate - 0.25
             # 将结果加入arriveRate列表中
             arriveRate.append(stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma))
@@ -128,10 +120,3 @@ class Cloudlets:
         for i in range(self.K):
             waitTimes.append(self.cloudlets[i].CalWaitTime())
         return waitTimes
-
-
-if __name__ == '__main__':
-    cloudlet = Cloudlet()
-    C = Cloudlets(cloudlet, 10)
-    C.initialize()
-    C.CalWaitTimes()
