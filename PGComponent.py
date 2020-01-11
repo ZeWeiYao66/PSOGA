@@ -28,25 +28,15 @@ class Individual:
         sol = []  # 随机生成的解
         len_Vs = len(overCld)  # 过载微云序号集合的长度
         len_Vt = len(underCld)  # 不过载微云序号集合的长度
-        # 生成解，并对每行进行检查，防止每行值之和超过过载微云i的任务到达率
+        # 生成解
+        '''problem2：粒子的初始化得修改，初始化的时间占用过大'''
         for i in range(len_Vs):
             temp = np.round(np.random.uniform(0, cloudlets[overCld[i]].arrivalRate, size=len_Vt), decimals=5)
-            while temp.sum() > cloudlets[overCld[i]].arrivalRate:
-                temp = np.round(np.random.uniform(0, cloudlets[overCld[i]].arrivalRate, size=len_Vt), decimals=5)
             sol.append(temp)
         # 转换成numpy.ndarray
         sol = np.array(sol)
-        # 对每列进行检查，防止超过微云j的总服务率(⭐⭐⭐要考虑不过载微云本身的任务到达率)
-        for j in range(len_Vt):
-            arg = cloudlets[underCld[j]].serverNum * cloudlets[underCld[j]].serverRate - \
-                  cloudlets[underCld[j]].arrivalRate
-            # 如果某列违反了条件，选取该列中的最大值进行随机减少，直到符合要求
-            while sol[:, j].sum() >= arg:
-                col = sol[:, j]
-                col_max_index = np.argmax(col)  # 获取该列中的最大值下标
-                sol[col_max_index][j] -= np.round(np.random.rand(), decimals=5)
-                if sol[col_max_index][j] < 0:
-                    sol[col_max_index][j] = 0
+        # 对生成的解进行检查
+        CheckSolution(sol, overCld, underCld, cloudlets)
         self.solution = sol
         # 更新个体极值
         self.pbest = sol
