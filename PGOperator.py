@@ -2,6 +2,8 @@
 # PGOperator.py: Mutation类
 # ------------------------------
 import numpy as np
+import Utils
+
 
 class Mutation:
     # 初始化
@@ -27,9 +29,11 @@ class Mutation:
         np.random.shuffle(row_rand_array)  # 对行下标进行重新排列
         np.random.shuffle(col_rand_array)  # 对列下标进行重新排列
         # 相当于对|len1|×|len2|的矩阵重新初始化
-        len1 = int(np.ceil(len_Vs / 2))  # 选取其中一半的行
+        # len1 = Utils.calculate_len(len_Vs)  # 随机选取其中的一些行,len1为随机选取的个数
+        len1 = np.random.randint(2, 20) if (len_Vs > 20) else (np.random.randint(2, len_Vs) if (len_Vs > 2) else len_Vs)
         row_rand_array = row_rand_array[:len1]
-        len2 = int(np.ceil(len_Vt / 2))  # 选取其中一半的列
+        # len2 = Utils.calculate_len(len_Vt)  # 随机选取其中的一些列,len2为随机选取的个数
+        len2 = np.random.randint(2, 20) if (len_Vt > 20) else (np.random.randint(2, len_Vt) if (len_Vt > 2) else len_Vt)
         col_rand_array = col_rand_array[:len2]
         # 重新初始化
         for i in range(len1):

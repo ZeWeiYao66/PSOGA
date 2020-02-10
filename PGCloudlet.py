@@ -53,10 +53,10 @@ class Cloudlets:
         # 使用numpy的poisson函数模拟泊松分布，返回K个微云的服务器数
         """Problem1: 该项可能会产生0，会使得初始化任务到达率出错。
                      如果出现0或者均值不为3，我们就重新生成"""
-        while True:
+        while 1:
             serNum = np.random.poisson(3, self.K)
             # 如果结果集内存在0或者均值不为3，则重新生成
-            if (0 in serNum) or (np.sum(serNum) != 3 * self.K):
+            if 0 in serNum:
                 continue
             else:
                 break

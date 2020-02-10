@@ -15,6 +15,7 @@ class Individual:
         self.velocity = None  # 粒子的速度
         self.fitness = None  # 粒子的适应度
         self.pbest = None  # 粒子的个体极值
+        self.pbestFitness = None  # 粒子的个体极值适应度
 
     # 初始化粒子的位置，该解为|Vs|*|Vt|的矩阵，并求适应度
     def initSolution(self, overCld, underCld, cloudlets, delayMatrix):
@@ -36,13 +37,14 @@ class Individual:
         # 转换成numpy.ndarray
         sol = np.array(sol)
         # 对生成的解进行检查
-        CheckSolution(sol, overCld, underCld, cloudlets)
+        CheckSolution(sol, overCld, underCld, cloudlets, True)
         self.solution = sol
         # 更新个体极值
         self.pbest = sol
         # 更新个体的适应度值
         cloudlets_copy = copy.deepcopy(cloudlets)
-        self.fitness = self.Calculate_fitness(overCld, underCld, cloudlets_copy, delayMatrix)
+        self.Calculate_fitness(overCld, underCld, cloudlets_copy, delayMatrix)
+        self.pbestFitness = self.fitness
 
     # 初始化粒子的速度，为|Vs|*|Vt|的矩阵
     def initVelocity(self, overCld, underCld, cloudlets):
@@ -96,7 +98,8 @@ class Individual:
                 UnderDelayTime += self.solution[n][j] * delayMatrix[overCld[n]][underCld[j]]
             responseTime.append(UnderWaitTime + UnderDelayTime)
         pbest_fitness = np.round(max(responseTime), decimals=5)
-        return pbest_fitness
+        self.fitness = pbest_fitness
+        # return pbest_fitness
 
 
 # 表征种群
@@ -162,10 +165,10 @@ class Population:
         for k in range(self.size):
             cloudlets_copy = copy.deepcopy(self.cloudlets.cloudlets)
             # 计算个体的适应度值
-            val = self.individuals[k].Calculate_fitness(self.overCld, self.underCld, cloudlets_copy, self.cloudlets.C)
+            self.individuals[k].Calculate_fitness(self.overCld, self.underCld, cloudlets_copy, self.cloudlets.C)
             # 如果更新过的粒子的适应度值比之前好，就对个体极值进行更新
-            if self.individuals[k].fitness > val:
-                self.individuals[k].fitness = val
+            if self.individuals[k].pbestFitness > self.individuals[k].fitness:
+                self.individuals[k].pbestFitness = self.individuals[k].fitness
                 self.individuals[k].pbest = self.individuals[k].solution
 
     # 更新全局极值
@@ -173,7 +176,7 @@ class Population:
         # 获取粒子群的适应度值
         fitnesses = []
         for i in range(self.size):
-            fitnesses.append(self.individuals[i].fitness)
+            fitnesses.append(self.individuals[i].pbestFitness)
         # 选取适应度值最小的粒子作为全局极值
         gbest_fit = min(fitnesses)
         gbest_index = np.argmin(fitnesses)
