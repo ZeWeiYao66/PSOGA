@@ -13,6 +13,7 @@ def ErlangC(n, p):
     :return: ErlangC公式计算出的值
     """
     try:
+        p = p + 1e-5
         L = (n * p) ** n / math.factorial(n)
         R = 1 / (1 - p)
         M = L * R

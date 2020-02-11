@@ -34,7 +34,7 @@ waitTimes_sorted = np.sort(waitTimes)  # 按照微云的本地任务响应时间
 fitness = []  # 存放适应度值
 result = []  # 存放每一次划分的结果
 start_time = time.process_time()
-for i in range(1, K - 1):
+for i in range(5, K - 5):
     OverCloudlet = []  # 过载微云的序号集合
     UnderCloudlet = []  # 不过载微云的序号集合
     Tp = waitTimes_sorted[i]  # 用作划分微云集合的微云p的本地任务响应时间
