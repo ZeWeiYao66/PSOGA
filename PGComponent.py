@@ -37,8 +37,7 @@ class Individual:
         # 转换成numpy.ndarray
         sol = np.array(sol)
         # 对生成的解进行检查
-        CheckSolution(sol, overCld, underCld, cloudlets, True)
-        self.solution = sol
+        self.solution = CheckSolution(sol, overCld, underCld, cloudlets, True)
         # 更新个体极值
         self.pbest = sol
         # 更新个体的适应度值
@@ -155,8 +154,7 @@ class Population:
         # 更新位置与速度
         X_t_plus_1 = self.individuals[index].solution + np.round(V_t_plus_1, decimals=5)
         # 检查粒子位置是否符合条件
-        CheckSolution(X_t_plus_1, self.overCld, self.underCld, self.cloudlets.cloudlets)
-        self.individuals[index].solution = X_t_plus_1
+        self.individuals[index].solution = CheckSolution(X_t_plus_1, self.overCld, self.underCld, self.cloudlets.cloudlets)
         self.individuals[index].velocity = np.round(V_t_plus_1, decimals=5)
 
     # 更新个体极值
