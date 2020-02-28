@@ -13,8 +13,8 @@ class Cloudlet:
     # 设定微云的参数
     def __init__(self):
         self.serverNum = None  # 服务器数量n
-        self.serverRate = None  # 服务率u
-        self.arrivalRate = None  # 任务到达率
+        self.serverRate = None  # 服务率μ
+        self.arrivalRate = None  # 任务到达率λ
         self.waitTime = None  # 任务等待时间T
 
     # 计算微云的任务等待时间
@@ -22,7 +22,7 @@ class Cloudlet:
         # 计算ErlangC的值
         p = self.arrivalRate / self.serverRate
         erlangC = Utils.ErlangC(self.serverNum, p)
-        T = erlangC / (self.serverNum * self.serverRate - self.arrivalRate) + 1 / self.serverRate
+        T = erlangC / (self.serverNum * self.serverRate - self.arrivalRate + 1e-5) + 1 / self.serverRate
         self.waitTime = np.around(T, decimals=5)
         return self.waitTime
 
@@ -56,11 +56,11 @@ class Cloudlets:
                      如果出现0或者均值不为3，我们就重新生成"""
         while 1:
             serNum = np.random.poisson(3, self.K)
-            # 如果结果集内存在0或者均值不为3，则重新生成
-            if 0 in serNum:
-                continue
-            else:
+            # 如果结果集内存在0，则重新生成
+            if 0 not in serNum:
                 break
+            else:
+                continue
         # 对微云集合进行赋值
         for i in range(self.K):
             self.cloudlets[i].serverNum = serNum[i]
@@ -86,6 +86,7 @@ class Cloudlets:
     # 初始化微云的任务到达率，服从正态分布0<N(15,6)<u*n-0.25
     def initArrivalRate(self):
         arriveRate = []
+        append = arriveRate.append
         lower = 0
         mu = 15
         sigma = 6
@@ -93,9 +94,10 @@ class Cloudlets:
             # 计算upper(每个微云对应的upper不一样)
             upper = self.cloudlets[i].serverNum * self.cloudlets[i].serverRate - 0.25
             # 将结果加入arriveRate列表中
-            arriveRate.append(stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma))
-            self.cloudlets[i].arrivalRate = np.around(arriveRate[i], decimals=5)
-        return np.around(arriveRate, decimals=5)
+            sample = stats.truncnorm.rvs((lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
+            append(np.round(sample, decimals=5))
+            self.cloudlets[i].arrivalRate = arriveRate[i]
+        return arriveRate
 
     # 初始化微云的网络延时C，0.1<=N(0.15,0.05)<=0.2(这里的延时矩阵C为对角线元素全为0的对称矩阵)
     def initC(self):
@@ -117,7 +119,5 @@ class Cloudlets:
 
     # 计算所有微云的任务等待时间
     def CalWaitTimes(self):
-        waitTimes = []
-        for i in range(self.K):
-            waitTimes.append(self.cloudlets[i].CalWaitTime())
+        waitTimes = [self.cloudlets[i].CalWaitTime() for i in range(self.K)]
         return waitTimes

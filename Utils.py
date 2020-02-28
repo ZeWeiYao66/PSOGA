@@ -3,7 +3,8 @@
 # ------------------------------
 import math
 import numpy as np
-
+from numpy import round, maximum, argmax
+from numpy.random import uniform
 
 # Erlang C 公式
 def ErlangC(n, p):
@@ -12,6 +13,7 @@ def ErlangC(n, p):
     :param p: 任务到达率/微云的服务率
     :return: ErlangC公式计算出的值
     """
+    # 给p加上一个很小的数，避免出现除0的现象
     p = p + 1e-5
     L = (n * p) ** n / math.factorial(n)
     R = 1 / (1 - p)
@@ -20,6 +22,7 @@ def ErlangC(n, p):
     for k in range(n):
         sum_ += (n * p) ** k / math.factorial(k)
     return M / (sum_ + M)
+
 
 # 对粒子的速度进行检查
 def CheckSpeed(velocity, overCld, underCld, cloudlets):
@@ -32,13 +35,13 @@ def CheckSpeed(velocity, overCld, underCld, cloudlets):
     len_Vs = len(overCld)
     len_Vt = len(underCld)
     for i in range(len_Vs):
-        arrRate = cloudlets[overCld[i]].arrivalRate  # 任务到达率
+        arrRate = cloudlets[overCld[i]].arrivalRate * 0.1  # 任务到达率
         for j in range(len_Vt):
             # 如果粒子的某一个分量速度超过取值范围，则设为边界值
-            if velocity[i][j] > arrRate * 0.1:
-                velocity[i][j] = arrRate * 0.1
-            elif velocity[i][j] < -arrRate * 0.1:
-                velocity[i][j] = -arrRate * 0.1
+            if velocity[i][j] > arrRate:
+                velocity[i][j] = arrRate
+            elif velocity[i][j] < -arrRate:
+                velocity[i][j] = -arrRate
 
 
 # 对粒子的位置进行检查
@@ -48,39 +51,54 @@ def CheckSolution(solution, overCld, underCld, cloudlets, flag=False):
     :param overCld: 过载微云序号集合
     :param underCld: 不过载微云序号集合
     :param cloudlets: 微云集合
-    :param flag: 用来判断是否是初始化解时的粒子解的检查
     """
     len_Vs = len(overCld)
     len_Vt = len(underCld)
     # 首先检查解当中是否有负数存在，存在则置为0，保证解中的每个数都>=0
-    # (不过在初始化的时候不需要取检查解中是否存在负数，因为初始化保证所有值均>=0)
-    # if not flag:
-    #     for i in range(len_Vs):
-    #         for j in range(len_Vt):
-    #             if solution[i][j] < 0:
-    #                 solution[i][j] = 0
     new_solution = np.maximum(solution, 0)
     # 接下来对解的每行进行检查，防止每行值之和超过过载微云i的任务到达率
     for i in range(len_Vs):
-        while new_solution[i, :].sum() > cloudlets[overCld[i]].arrivalRate:
-            row = new_solution[i, :]
-            row_max_index = np.argmax(row)
-            # 如果该行中最大的值大于任务到达率的一半，就将其除以2
-            if new_solution[i][row_max_index] >= cloudlets[overCld[i]].arrivalRate / 2:
-                new_solution[i][row_max_index] = new_solution[i][row_max_index] / 2
-            new_solution[i][row_max_index] -= np.round(np.random.rand(), decimals=5)
-            # if solution[i][row_max_index] < 0:
-            #     solution[i][row_max_index] = 0
-    new_solution = np.maximum(new_solution, 0)
+        # 微云i的迁出的任务流之和
+        cloud_arr_rate = cloudlets[overCld[i]].arrivalRate
+        arr_sum_row = new_solution[i, :].sum()
+        while arr_sum_row > cloud_arr_rate:
+            # 正数的个数,因为True相当于1，可以直接求和代表个数
+            pos_num_1 = (new_solution[i, :] > 0).sum()
+            # 将该行的每个数都减去一个值，直到符合要求（⭐⭐⭐注意除数要为>0的个数，不然会出现循环，因为对为0的数减少，之后又置为0，该数就应该不要算进去）
+            diff_value_1 = arr_sum_row - cloud_arr_rate
+            num_row = np.round(diff_value_1 / pos_num_1, decimals=5)
+            if num_row < 1e-3:
+                row_max_index = np.argmax(new_solution[i, :])
+                new_solution[i][row_max_index] -= diff_value_1
+                arr_sum_row = new_solution[i, :].sum()
+                continue
+            new_solution[i, :] -= num_row
+            # 相减出现负值的话，将负值置为0
+            new_solution[i, :] = new_solution[i, :] * (new_solution[i, :] >= 0)
+            arr_sum_row = new_solution[i, :].sum()
     # 接下来对解的每列进行检查，防止每列值之和超过不过载微云j的总任务接受率(⭐⭐⭐要考虑不过载微云本身的任务到达率)
     for j in range(len_Vt):
         arg = cloudlets[underCld[j]].serverNum * cloudlets[underCld[j]].serverRate - \
               cloudlets[underCld[j]].arrivalRate
-        while new_solution[:, j].sum() >= arg:
-            col = new_solution[:, j]
-            col_max_index = np.argmax(col)  # 获取该列中的最大值下标
-            new_solution[col_max_index][j] -= np.round(np.random.rand(), decimals=5)
-            if new_solution[col_max_index][j] < 0:
-                new_solution[col_max_index][j] = 0
-    new_solution = np.maximum(new_solution, 0)
-    return new_solution
+        arg = arg - 1e-3
+        arr_sum_col = new_solution[:, j].sum()
+        # 注意：这里的条件是sum>=arg，与上面条件不一样，要有所修改
+        while arr_sum_col > arg:
+            pos_num_2 = (new_solution[:, j] > 0).sum()
+            # 将该列的每个数都减去一个值，直到符合要求
+            diff_value_2 = arr_sum_col - arg
+            num_col = np.round(diff_value_2 / pos_num_2, decimals=5)
+            if num_col < 1e-3:
+                col_max_index = np.argmax(new_solution[:, j])
+                new_solution[col_max_index][j] -= diff_value_2
+                arr_sum_col = new_solution[:, j].sum()
+                continue
+            new_solution[:, j] -= num_col
+            new_solution[:, j] = new_solution[:, j] * (new_solution[:, j] >= 0)
+            arr_sum_col = new_solution[:, j].sum()
+    return np.round(new_solution, decimals=5)
+
+
+# 根据粒子适应度值排序
+def SortByFitness():
+    pass

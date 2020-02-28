@@ -1,13 +1,18 @@
 <component name="ProjectDictionaryState">
   <dictionary name="98294">
     <words>
+      <w>attrgetter</w>
       <w>cloudlet</w>
       <w>cloudlets</w>
       <w>erlang</w>
       <w>fitnesses</w>
       <w>gbest</w>
+      <w>indiv</w>
       <w>ndarray</w>
       <w>pbest</w>
+      <w>psoga</w>
+      <w>wmax</w>
+      <w>wmin</w>
     </words>
   </dictionary>
 </component>
