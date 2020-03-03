@@ -24,17 +24,21 @@ print('服务器数目：', serNum.tolist())
 print('服务率：', serRate.tolist())
 print('任务到达率：', arrRate)
 print('网络延时：', delayMat.tolist())
+
 '''Step3：计算每个微云的本地任务响应时间'''
 waitTimes = cloudlets.CalWaitTimes()
 print('所有微云的本地任务响应时间: ', waitTimes)
 print('其中最大的本地任务响应时间: ', max(waitTimes))
 # 按照微云的本地任务响应时间进行排序
 waitTimes_sorted = np.sort(waitTimes)
-'''Step4：按照微云的本地任务响应时间，将K个微云划分成过载和不过载的微云.倒数第二次划分舍去'''
+
+'''Step4：按照微云的本地任务响应时间，将K个微云划分成过载和不过载的微云'''
 fitness = []  # 存放适应度值
 result = []  # 存放每一次划分的结果
 start_time = time.process_time()
-for i in range(1, K-3):
+# 根据测试得出的最优解主要分布的范围
+new_k = int(K/2)
+for i in range(new_k-3, new_k+3):
     OverCloudlet = []  # 过载微云的序号集合
     UnderCloudlet = []  # 不过载微云的序号集合
     Tp = waitTimes_sorted[i]  # 用作划分微云集合的微云p的本地任务响应时间
@@ -49,6 +53,7 @@ for i in range(1, K-3):
     print('第 ' + str(i) + ' 次')
     print('过载微云集合:  ', OverCloudlet)
     print('不过载微云集合:', UnderCloudlet)
+
     '''Step5：初始化粒子的解（也即任务流g）,计算适应值，并进行迭代'''
     I = Individual()  # 单个粒子
     P = Population(I, cloudlets, OverCloudlet, UnderCloudlet, Pnum, w)  # 种群(粒子集合)
@@ -61,6 +66,7 @@ for i in range(1, K-3):
     fitness.append(fit)
 end_time = time.process_time()
 print('total time outside:', end_time - start_time)
+
 '''Step6：从result中计算最优解'''
 best_index = np.argmin(fitness)  # 获取最优结果的下标
 print(fitness[best_index])  # 打印最优适应度值

@@ -201,7 +201,6 @@ class Population:
         gbest_index = argmin(fitnesses)
         if self.gbestFitness > gbest_fit:
             self.gbestFitness = gbest_fit
-            self.gbest = self.individuals[gbest_index].pbest
-        elif self.gbestFitness > gbest_fit:
-            self.gbestFitness = gbest_fit
-            self.gbest = self.individuals[gbest_index].pbest
+            self.gbest = self.individuals[gbest_index].pbest.copy()
+            self.responTime = self.individuals[gbest_index].pbestResponseTime.copy()
+

@@ -97,8 +97,3 @@ def CheckSolution(solution, overCld, underCld, cloudlets, flag=False):
             new_solution[:, j] = new_solution[:, j] * (new_solution[:, j] >= 0)
             arr_sum_col = new_solution[:, j].sum()
     return np.round(new_solution, decimals=5)
-
-
-# 根据粒子适应度值排序
-def SortByFitness():
-    pass
