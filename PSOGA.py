@@ -64,18 +64,7 @@ class Psoga:
             for index in range(size):
                 self.population.update_position(index)
             self.population.CalculateAllFit()
-            # 根据适应度值对个体进行排序，从小到大
-            self.population.individuals.sort(key=compare_fun)
-            # 1).进行交叉操作
-            self.crossover.cross(self.population)
-            # 2).进行变异操作(需要检查变异的粒子是否符合要求)
-            self.mutation.mutate(self.population, overCld, underCld, cloudlets)
-            # 计算个体的适应度值
-            self.population.CalculateAllFit()
-            # 3).更新个体极值(全部粒子的速度和位置更新完之后再去计算)
-            self.population.update_pbest()
-            # 4).更新全局极值
-            self.population.update_gbest()
+
         end_time2 = time.time()
         print('iterate time: ', end_time2 - start_time2)
         # Step4：结束迭代，返回全局极值
