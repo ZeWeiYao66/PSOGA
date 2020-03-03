@@ -44,15 +44,14 @@ class Individual:
         sol = np.round(array(sol), decimals=5)
         # 对生成的解进行检查
         self.solution = CheckSolution(sol, overCld, underCld, cloudlets)
-        # 更新个体极值
-        self.pbest = self.solution
+        # 更新个体极值(⭐⭐⭐必须要用copy函数，否则修改solution属性，pbest属性也会跟着变化)
+        self.pbest = self.solution.copy()
         # 更新个体的适应度值
         cloudlets_copy = copy.deepcopy(cloudlets)
-        resTime = self.Calculate_fitness(overCld, underCld, cloudlets_copy, delayMatrix)
+        self.Calculate_fitness(overCld, underCld, cloudlets_copy, delayMatrix)
         self.pbestFitness = self.fitness
-        # 更新个体极值的响应时间
-        self.responseTime = resTime
-        self.pbestResponseTime = resTime
+        # 更新个体极值的响应时间（需要进行赋值，否则其中一个改变另一个也会跟着改变）
+        self.pbestResponseTime = self.responseTime.copy()
 
     # 初始化粒子的速度，为|Vs|*|Vt|的矩阵
     def initVelocity(self, overCld, underCld, cloudlets):
@@ -108,7 +107,7 @@ class Individual:
                 UnderDelayTime += self.solution[n][j] * delayMatrix[overCld[n]][underCld[j]]
             responseTime[underCld[j]] = UnderWaitTime + UnderDelayTime
         self.fitness = np.round(max(responseTime), decimals=5)
-        return np.round(responseTime, decimals=5)
+        self.responseTime = np.round(responseTime, decimals=5)
 
 
 # 表征种群
@@ -139,9 +138,9 @@ class Population:
         # 更新全局极值
         fitnesses = [self.individuals[i].pbestFitness for i in range(self.size)]
         gbest_index = argmin(fitnesses)
-        self.gbest = self.individuals[int(gbest_index)].pbest
+        self.gbest = self.individuals[gbest_index].pbest.copy()
         self.gbestFitness = min(fitnesses)
-        self.responTime = self.individuals[gbest_index].responseTime
+        self.responTime = self.individuals[gbest_index].pbestResponseTime.copy()
         # 初始化粒子的速度
         self.initVelo()
 
@@ -179,9 +178,7 @@ class Population:
         for k in range(self.size):
             # 对微云集合进行深复制，这样子对复制集合操作不会对原集合产生影响
             cloudlets_copy = copy.deepcopy(self.cloudlets.cloudlets)
-            resTime = self.individuals[k].Calculate_fitness(self.overCld, self.underCld, cloudlets_copy,
-                                                            self.cloudlets.C)
-            self.individuals[k].responseTime = resTime
+            self.individuals[k].Calculate_fitness(self.overCld, self.underCld, cloudlets_copy, self.cloudlets.C)
 
     # 更新个体极值
     def update_pbest(self):
@@ -189,8 +186,8 @@ class Population:
             # 如果更新过的粒子的适应度值比之前好，就对个体极值进行更新
             if self.individuals[k].pbestFitness > self.individuals[k].fitness:
                 self.individuals[k].pbestFitness = self.individuals[k].fitness
-                self.individuals[k].pbest = self.individuals[k].solution
-                self.individuals[k].pbestResponseTime = self.individuals[k].responseTime
+                self.individuals[k].pbest = self.individuals[k].solution.copy()
+                self.individuals[k].pbestResponseTime = self.individuals[k].responseTime.copy()
 
     # 更新全局极值
     def update_gbest(self):
