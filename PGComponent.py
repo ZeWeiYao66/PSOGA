@@ -8,6 +8,7 @@ import copy
 from PGCloudlet import Cloudlet, Cloudlets
 from Utils import *
 import operator
+from numba import jit
 
 
 # 表征个体（即粒子）
@@ -84,28 +85,24 @@ class Individual:
         len_Vs = len(overCld)  # 过载微云序号集合的长度
         len_Vt = len(underCld)  # 不过载微云序号集合的长度
         # 1.对过载微云的任务到达率进行更新
+        sol_sum_row = self.solution.sum(axis=1)
         for oIndex in range(len_Vs):
-            sol_sum_row = self.solution[oIndex, :].sum()
-            cloudlets[overCld[oIndex]].arrivalRate -= sol_sum_row
+            cloudlets[overCld[oIndex]].arrivalRate -= sol_sum_row[oIndex]
         # 2.对不过载微云的任务到达率进行更新
+        sol_sum_col = self.solution.sum(axis=0)
         for uIndex in range(len_Vt):
-            sol_sum_col = self.solution[:, uIndex].sum()
-            cloudlets[underCld[uIndex]].arrivalRate += sol_sum_col
+            cloudlets[underCld[uIndex]].arrivalRate += sol_sum_col[uIndex]
         # 3.对于过载微云只需要计算任务等待时间，而过载微云需要计算任务等待时间与网络延迟
-        responseTime = [0 for _ in range(len_Vs + len_Vt)]
         # 4.计算过载微云的任务响应时间
-        for i in range(len_Vs):
-            OverWaitTime = cloudlets[overCld[i]].CalWaitTime()
-            responseTime[overCld[i]] = OverWaitTime
-        # 5.计算不过载微云的任务响应时间
+        responseTime = [cloudlets[overCld[i]].CalWaitTime() for i in range(len_Vs)]
+        # 5.计算不过载微云的任务响应时间(不过载微云的任务等待时间)
+        responseTime.extend([cloudlets[underCld[j]].CalWaitTime() for j in range(len_Vt)])
         for j in range(len_Vt):
-            # 不过载微云的任务等待时间
-            UnderWaitTime = cloudlets[underCld[j]].CalWaitTime()
             # 不过载微云的总网络延时
             UnderDelayTime = 0
             for n in range(len_Vs):
                 UnderDelayTime += self.solution[n][j] * delayMatrix[overCld[n]][underCld[j]]
-            responseTime[underCld[j]] = UnderWaitTime + UnderDelayTime
+            responseTime[len_Vs+j] += UnderDelayTime
         self.fitness = np.round(max(responseTime), decimals=5)
         self.responseTime = np.round(responseTime, decimals=5)
 

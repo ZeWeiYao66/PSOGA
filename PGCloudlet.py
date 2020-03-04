@@ -20,8 +20,7 @@ class Cloudlet:
     # 计算微云的任务等待时间
     def CalWaitTime(self):
         # 计算ErlangC的值
-        p = self.arrivalRate / self.serverRate
-        erlangC = Utils.ErlangC(self.serverNum, p)
+        erlangC = Utils.ErlangC(self.serverNum, self.arrivalRate / self.serverRate)
         T = erlangC / (self.serverNum * self.serverRate - self.arrivalRate + 1e-5) + 1 / self.serverRate
         self.waitTime = np.around(T, decimals=5)
         return self.waitTime

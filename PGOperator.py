@@ -25,8 +25,6 @@ class CrossOver:
         for individual_a, individual_b in zip(population.individuals, random_population):
             population.individuals[i].solution = np.round((individual_a.solution + individual_b.solution) / 2,
                                                           decimals=5)
-            # population.individuals[i].solution = CheckSolution(solution, population.overCld, population.underCld,
-            #                                                    population.cloudlets.cloudlets)
             i += 1
 
 
@@ -41,8 +39,8 @@ class Mutation:
 
     # 对种群的后1/3个体进行变异
     def mutate(self, population, overCld, underCld, cloudlets):
-        num = int(population.size / 3)
-        for indiv in population.individuals[num * 2:population.size]:
+        # num = int(population.size / 3)
+        for indiv in population.individuals[0:population.size]:
             if np.random.rand() > self.rate:
                 continue
             # 进行变异
