@@ -10,7 +10,12 @@
       <w>indiv</w>
       <w>ndarray</w>
       <w>pbest</w>
+      <w>pnum</w>
       <w>psoga</w>
+      <w>respon</w>
+      <w>rmut</w>
+      <w>solu</w>
+      <w>velo</w>
       <w>wmax</w>
       <w>wmin</w>
     </words>

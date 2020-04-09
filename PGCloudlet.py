@@ -3,9 +3,7 @@
 # ------------------------------
 import numpy as np
 import scipy.stats as stats
-import copy
-import Utils
-
+from math import factorial
 '''
 单个微云
 '''
@@ -15,15 +13,20 @@ class Cloudlet:
         self.serverNum = None  # 服务器数量n
         self.serverRate = None  # 服务率μ
         self.arrivalRate = None  # 任务到达率λ
-        self.waitTime = None  # 任务等待时间T
 
     # 计算微云的任务等待时间
     def CalWaitTime(self):
         # 计算ErlangC的值
-        erlangC = Utils.ErlangC(self.serverNum, self.arrivalRate / self.serverRate)
+        p = self.arrivalRate / self.serverRate + 1e-5
+        temp = self.serverNum * p
+        L = (pow(temp, self.serverNum) / factorial(self.serverNum)) * (1 / (1 - p))
+        sum_ = 0
+        for k in range(self.serverNum):
+            sum_ += pow(temp, k) / factorial(k)
+        erlangC = L / (sum_ + L)
+        # 计算任务等待时间
         T = erlangC / (self.serverNum * self.serverRate - self.arrivalRate + 1e-5) + 1 / self.serverRate
-        self.waitTime = np.around(T, decimals=5)
-        return self.waitTime
+        return np.around(T, decimals=5)
 
 
 '''
@@ -41,19 +44,14 @@ class Cloudlets:
     def initialize(self):
         CldClass = self.cloudlet.__class__
         # 声明cloudlet对象
-        self.cloudlets = np.array([CldClass() for i in range(self.K)], dtype=CldClass)
-        ser_num = self.initServerNum()
-        ser_rate = self.initServerRate()
-        arr_rate = self.initArrivalRate()
-        delay_matrix = self.initC()
-        return ser_num, ser_rate, arr_rate, delay_matrix
+        self.cloudlets = np.array([CldClass() for _ in range(self.K)], dtype=CldClass)
 
     # 初始化微云的服务器数量，服从泊松分布（均值为3）
     def initServerNum(self):
         # 使用numpy的poisson函数模拟泊松分布，返回K个微云的服务器数
         """Problem1: 该项可能会产生0，会使得初始化任务到达率出错。
-                     如果出现0或者均值不为3，我们就重新生成"""
-        while 1:
+                     如果出现0，我们就重新生成"""
+        while True:
             serNum = np.random.poisson(3, self.K)
             # 如果结果集内存在0，则重新生成
             if 0 not in serNum:

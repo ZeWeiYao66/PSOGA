@@ -1,25 +1,17 @@
-import numpy as np
-import random
-import scipy.stats as stats
-from Utils import *
 import time
-import operator
-from math import pow
 
 
 # 粒子群遗传算法
 class Psoga:
-    def __init__(self, population, mutation, crossover, Wmin=0.3, Wmax=0.8):
+    def __init__(self, population, mutation, Wmin=0.3, Wmax=0.8):
         """
         :param population: 粒子群
         :param mutation: 变异操作
-        :param crossover: 交叉操作
         :param Wmin: 惯性权重下限
         :param Wmax: 惯性权重上限
         """
         self.population = population  # 种群
         self.mutation = mutation  # 变异操作
-        self.crossover = crossover  # 交叉操作
         self.Wmin = Wmin  # 惯性权重取值范围
         self.Wmax = Wmax
 
@@ -39,31 +31,21 @@ class Psoga:
         overCld = self.population.overCld
         underCld = self.population.underCld
         cloudlets = self.population.cloudlets.cloudlets
-        # 比较函数，根据键‘fitness’属性对对象数组进行排序
-        compare_fun = operator.attrgetter('fitness')
+        # 进行迭代
         for n in range(1, gen + 1):
-            # Step3：对所有粒子进行速度、位置的更新，然后根据适应度值排序，将粒子群分成三个部分，第一部分不动
-            #        第二部分进行交叉操作，第三部分进行变异操作。
+            # Step3：对所有粒子进行速度、位置的更新，然后对全部粒子进行变异操作，在更新个体极值与全局极值
+            # 计算惯性权重
             self.population.w = self.Wmax - n * (self.Wmax - self.Wmin) / gen
-            # self.population.w = self.Wmax - (self.Wmax - self.Wmin) * (np.log(n) / np.log(gen))
-            # self.population.w = (self.Wmax - self.Wmin) * pow(n / gen, 2) + (self.Wmax - self.Wmin) * (
-            #             2 * n / gen) + self.Wmax
-            # 根据适应度值对个体进行排序，从小到大
-            # self.population.individuals.sort(key=compare_fun)
-            # # 1).进行交叉操作
-            # self.crossover.cross(self.population)
-            # # 2).进行变异操作(需要检查变异的粒子是否符合要求)
-            # self.mutation.mutate(self.population, overCld, underCld, cloudlets)
-            # # 计算个体的适应度值
-            # self.population.CalculateAllFit()
-            # 更新粒子的位置、速度
+            # 1).更新粒子的位置、速度
             for index in range(size):
                 self.population.update_position(index)
+            # 2).进行变异操作
             self.mutation.mutate(self.population, overCld, underCld, cloudlets)
+            # 3).计算粒子的适应度值
             self.population.CalculateAllFit()
-            # 3).更新个体极值(全部粒子的速度和位置更新完之后再去计算)
+            # 4).更新个体极值(全部粒子的速度和位置更新完之后再去计算)
             self.population.update_pbest()
-            # 4).更新全局极值
+            # 5).更新全局极值
             self.population.update_gbest()
         end_time2 = time.time()
         print('iterate time: ', end_time2 - start_time2)
